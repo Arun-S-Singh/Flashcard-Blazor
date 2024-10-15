@@ -1,0 +1,79 @@
+﻿@page "/crud/card/list"
+
+@model Flashcard.Pages.CRUD.Flashcard.IndexModel
+
+@{
+    ViewData["Title"] = "Manage Cards";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<h1>Manage Cards</h1>
+<p>
+    <a href="/admin">Back to Administrator Page</a>
+</p>
+<p>
+    <a asp-page="Create">Create New Card</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].BundleId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].CardId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].Question)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].Answer)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].Image)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].BackImage)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].Category)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CardModel[0].Explanation)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.CardModel) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.BundleId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CardId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Question)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Answer)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Image)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Category)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Explanation)
+            </td>
+            <td>
+                <a asp-page="./Edit" asp-route-id="@item.Id">Edit</a> |
+                <a asp-page="./Details" asp-route-id="@item.Id">Details</a> |
+                <a asp-page="./Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

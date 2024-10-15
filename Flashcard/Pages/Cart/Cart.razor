@@ -1,0 +1,186 @@
+﻿@page "/cart"
+
+@using Flashcard.Data.Cart
+@using Flashcard.Data.Bundle
+@using Flashcard.Data.Order
+@using Flashcard.Data.Subscription
+@using Serilog
+
+
+@using Flashcard.Pages.Bundle
+
+@inject CartService cartsvc
+@inject AuthenticationStateProvider ASP
+@inject NavigationManager navigate
+@inject SubscriptionService subscriptionsvc
+@inject OrderService ordersvc
+
+
+<AuthorizeView>
+    <Authorized>
+        @if (_cartList == null)
+        {
+            <div class="p-3 mb-2 bg-primary text-white"><h5>Loading your cart items ...</h5></div>
+            <div class="spinner-border text-info" role="status">
+                <span class="visually-hidden">Loading your cart items ...</span>
+            </div>
+        }
+        else
+        {
+            <div class="container-fluid">
+                <div class="row">
+                        @if (_cartList.Count > 0)
+                        {
+                        <div><b>Total Cost - @TotalCartValue</b></div>
+                            <div><button class="btn btn-primary" @onclick="CheckOut" type="button">CheckOut</button></div>
+                            <p></p>
+                        }
+                </div>
+                
+                <div class="row">
+                    @if (_cartList.Count == 0)
+                    { 
+                        <div class="p-3 mb-2 bg-primary text-white"><h5>Nothing added to the Cart as yet !!</h5></div>
+
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="subscriptions">
+                                <span class="oi oi-list-rich" aria-hidden="true"></span> Go to Subscriptions
+                            </NavLink>
+                        </div>
+
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="bundlelist">
+                                <span class="oi oi-list" aria-hidden="true"></span> Go to Bundles
+                            </NavLink>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var mybundle in _cartList)
+                        {                        
+                        <div class="col-lg">
+                            <Bundle Id=@mybundle.Id 
+                                    Name=@mybundle.Name 
+                                    Description=@mybundle.Description
+                                    Price=@mybundle.Price 
+                                    Category=@mybundle.Category 
+                                    Image=@mybundle.Image
+                                    UserId=@_userId
+                                    OnCartEvent="RefreshCart"
+                                    BundleState=@StateOfBundle.AddedToCart.ToString() >
+                            </Bundle>
+                        </div>
+                        }
+                    }  
+                </div>
+            </div>
+        }
+     </Authorized>
+    <NotAuthorized>
+        <a href="Identity/Account/Register">Register</a>
+        <a href="Identity/Account/Login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+
+    private List<BundleModel>? _cartList;
+    private string _userId;
+    private decimal TotalCartValue = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await ASP.GetAuthenticationStateAsync()).User;
+        var UserId = user.FindFirst(c => c.Type.Contains("nameidentifier"))?.Value;
+
+        if (UserId is not null)
+        {
+            _userId = UserId;
+
+            try
+            {
+                _cartList = await Task.Run(() => cartsvc.GetSelectedItemsAsync(_userId));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex,"Error retrieving cart items for the user {user}", _userId);
+            }
+        }
+        else
+        {
+            Log.Information("Not able to retireve User");
+        }
+
+        if (_cartList is not null) 
+        {
+            foreach (var bndle in _cartList)
+            {
+                TotalCartValue = TotalCartValue + bndle.Price;
+            }
+        }
+
+
+    }
+    private async void CheckOut()
+    {
+        List<SubscriptionModel> subslist = new List<SubscriptionModel>();
+        List<CartModel> cartlist = new List<CartModel>();
+        List<OrderModel> orderlist = new List<OrderModel>();
+
+        SubscriptionModel subsitem;
+        CartModel cartitem;
+        OrderModel orderitem;
+
+        bool ordersuccess = false;
+        bool cartsuccess = false;
+        bool subssuccess = false;
+
+        Guid orderid = Guid.NewGuid();
+        
+        @foreach (var bndle in _cartList)
+        {
+            subsitem = new SubscriptionModel();
+            subsitem.Id = Guid.NewGuid();
+            subsitem.UserId = _userId;
+            subsitem.BundleID = bndle.Id;
+            subsitem.StartDate = DateTime.Now;
+            subsitem.EndDate = DateTime.Now.AddDays(bndle.SubscriptionPeriod);
+            subslist.Add(subsitem);
+
+            cartitem = new CartModel();
+            cartitem.Userid = _userId;
+            cartitem.BundleId = bndle.Id;
+            cartlist.Add(cartitem);
+
+            orderitem = new OrderModel();
+            orderitem.OrderId = orderid;
+            orderitem.UserId = _userId;
+            orderitem.BundleId = bndle.Id;
+            orderitem.BundlePrice = bndle.Price;
+            orderitem.CreateDate = DateTime.Now;
+            orderitem.TotalCost = TotalCartValue;
+            orderlist.Add(orderitem);
+        }
+
+        ordersuccess = await Task.Run(() => ordersvc.AddOrders(orderlist));
+
+        if (ordersuccess)
+        {
+            cartsuccess = await Task.Run(() => cartsvc.RemoveBundlesFromCart(cartlist));
+        }
+
+        if (ordersuccess && cartsuccess)
+        {
+            subssuccess = await Task.Run(() => subscriptionsvc.InsertSubscriptionsAsync(subslist));
+        }
+        
+        
+        RefreshCart();
+
+    }
+
+
+    private void RefreshCart()
+    {
+        navigate.NavigateTo("/subscriptions", forceLoad: true);
+    }
+}

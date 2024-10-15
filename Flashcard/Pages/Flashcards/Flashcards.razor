@@ -1,0 +1,482 @@
+﻿@page "/flashcards/{UserId}/{BundleID:int}/{BundleName}"
+
+@using Serilog;
+@using Flashcard.Data.Card
+
+@inject CardService Cardsvc
+
+
+<AuthorizeView>
+    <Authorized>
+        <div>
+            @if (catlist == null || cardlist == null)
+            {
+                <div class="p-3 mb-2 bg-primary text-white">Loading flashcards ...</div>
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Loading flashcards ...</span>
+                </div>
+
+            }
+            else 
+            {
+                if (cardlist.Count == 0)
+                {
+                <div class=container>
+                    <div class="p-3 mb-2 bg-primary text-white">It seems you have answered all the cards. Try enabling "Include Answered".</div>
+                    <p class="text-center text-uppercase font-weight-bold text-primary">
+                        <h3><b>@BundleName</b></h3>
+                    </p>
+
+                    <div class="row text-center">
+                        <div>
+                            <select class="btn btn-primary dropdown-toggle" value="@selectedCategory" @onchange="GetFlashCards">
+                                <option value=@String.Empty>Choose a section from the list:</option>
+                                <option value="ALL">ALL</option>
+                                @foreach (var cat in catlist)
+                                {
+                                    <option value=@cat.Category>@cat.Category</option>
+
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               checked=@IncludeAnswered
+                               id="includeAnswered"
+                               value="@IncludeAnswered"
+                        @onchange="GetFlashCards">
+                        <label class="form-check-label" for="includeAnswered">Include Answered</label>
+                    </div>
+                    </div>
+                }
+                else if (cardlist.Count > 0)
+                {
+                    <div class=container>
+                        <!-- Card header Start-->
+                        
+                        
+                        <p class="text-center text-uppercase font-weight-bold text-primary">
+                            <h3><b>@BundleName</b></h3>
+                        </p>
+                        
+                        <div class="row text-center">
+                            <div>
+                                <select class="btn btn-primary dropdown-toggle"  value="@selectedCategory" @onchange="GetFlashCards">
+                                    <option value=@String.Empty>Choose a section from the list:</option>
+                                    <option value="ALL">ALL</option>
+                                    @foreach (var cat in catlist)
+                                    {
+                                        <option value=@cat.Category>@cat.Category</option>
+
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" 
+                                    checked=@IncludeAnswered 
+                                    id="includeAnswered"
+                                   value="@IncludeAnswered"
+                                    @onchange="GetFlashCards">
+                            <label class="form-check-label" for="includeAnswered">Include Answered</label>
+                        </div>
+                        <!-- Card header End -->
+                        <p/>
+                        <div class="row">
+                            <div class="col-xs-6">
+                                <!-- Card Start -->
+                                <div class="card @csstext" 
+                                    @onclick="FlipCard"
+                                    @ontouchstart="HandleTouchStart" 
+                                    @ontouchend="HandleTouchEnd">
+                                    <!-- Card Front Start -->
+                                    <div class="front">
+                                        <div class="card-body rounded">
+                                            <h6>@(CardIndex+1) of @CardCount</h6>
+                                            <h2>@cardlist[CardIndex].Question</h2>
+
+                                            @if (@cardlist[CardIndex].Image is not null)
+                                            {
+                                                <p>
+                                                    <!--card-img-top img-fluid w-lg-75 w-md-50 w-100 text-center-->
+                                                    <img src="@cardlist[CardIndex].Image"
+                                                         class="card-img-top img-fluid w-lg-75 w-md-50 w-100 text-center" />
+                                                </p>
+                                            }
+                                        </div>
+                                    </div>
+                                    <!-- Card  Front End -->
+
+                                    <!-- Card Back Start -->
+                                    <div class="back">
+                                        <div class="card-body rounded">
+                                            <h2>@((MarkupString)@cardlist[CardIndex].Answer)</h2>
+                                            <p />
+                                            @if (@cardlist[CardIndex].BackImage is not null)
+                                            {
+                                                <p>
+                                                    <!--card-img-top img-fluid w-lg-10 w-md-20 w-50 text-center-->
+                                                    <img src="@cardlist[CardIndex].BackImage"
+                                                         class="card-img-top img-fluid w-lg-10 w-md-20 w-50 text-center" />
+                                                </p>
+                                            }
+                                           
+                                            @if (@cardlist[CardIndex].Explanation is not null)
+                                            {
+                                                <b>Explanation: </b>
+
+                                                @cardlist[CardIndex].Explanation
+                                            }
+                                        </div>
+                                    </div>
+                                    <!-- Card Back End -->
+                                </div>
+                                <!-- Card End-->
+                            </div>
+                        </div>
+                        <p />
+                        <!-- Button Panel Start-->
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-primary btn-sm" @onclick="GoToPrevCard">@prevbtntext</button>
+                            <!--<p class="text-center fst-italic fw-lighter fs-20">You can swipe too</p>-->
+                            <button type="button" class=@AnswerState @onclick="Answered">Answered</button>
+                            <button type="button" class="btn btn-primary btn-sm" @onclick="GoToNextCard">@nextbtntext</button>
+                        </div>
+                        <!-- Button Panel End-->
+                    </div> 
+                    <!--End of Card container-->
+                }
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <a href="Identity/Account/Register">Register</a>
+        <a href="Identity/Account/Login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+
+    [Parameter]
+    public string UserId { get; set; }
+
+    [Parameter]
+    public int BundleID { get; set; }
+
+    [Parameter]
+    public string BundleName { get; set; }
+
+    [Parameter]
+    public string Question { get; set; }
+
+    [Parameter]
+    public string Answer { get; set; }
+
+
+    [Parameter]
+    public int CardIndex { get; set; }
+
+    [Parameter]
+    public int CardCount { get; set; }
+
+    [Parameter]
+    public bool IncludeAnswered { get; set; } = true;
+
+    [Parameter]
+    public string AnswerState { get; set; } = "btn btn-secondary btn-sm";
+
+    private bool flip = false;
+    private string csstext = string.Empty;
+    private string prevbtnstate = string.Empty;
+    private string nextbtnstate = string.Empty;
+
+    private List<CardModel>? cardlist;
+    private List<CardModel>? catlist;
+    private String selectedCategory = string.Empty;
+
+    (TouchPoint ReferencePoint, DateTime StartTime) startPoint;
+    string swipedirection = string.Empty;
+    private const string prevbtntext = " < ";
+    private const string nextbtntext = " > ";
+
+
+    private void FlipCard()
+    {
+        flip = !flip;
+        csstext = flip ? " flip" : "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize state
+
+        selectedCategory = "ALL";
+        CardIndex = 0;
+        prevbtnstate = "disabled";
+        nextbtnstate = "enabled";
+
+        try
+        {
+            catlist = await Task.Run(() => Cardsvc.GetAllCategoriesAsync(BundleID));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving categories for Bundle Id {BundleID} , {BundleName}", BundleID, BundleName);
+        }
+
+        try
+        {
+            cardlist = await Task.Run(() => Cardsvc.GetAllCardsAsync(BundleID, UserId, IncludeAnswered));
+
+            if (cardlist is not null)
+            {
+                //Radomize
+                cardlist = cardlist.OrderBy(x => Random.Shared.Next()).ToList();
+                CardCount = cardlist.Count<CardModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving cards for Bundle Id {BundleID} , {BundleName}", BundleID, BundleName);
+        }
+        ChangeAnswerState("Intialize");
+    }
+
+    private void ChangeAnswerState(string navigation)
+    {
+        int next, prev;
+
+        if (navigation == "Intialize" && cardlist != null && cardlist.Count >0)
+        {
+            if ((cardlist[CardIndex].Answered == null) || (cardlist[CardIndex].Answered == false))
+            {
+                AnswerState = "btn btn-secondary btn-sm";
+            }
+            else
+            {
+                AnswerState = "btn btn-success btn-sm";
+            }
+        }
+        else if (navigation == "Next")
+        {
+            next = CardIndex + 1;
+            if (next >= CardCount)
+            { 
+                next = CardCount - 1; 
+            }
+
+            if ((cardlist[next].Answered == null) || (cardlist[next].Answered == false))
+            {
+                AnswerState = "btn btn-secondary btn-sm";
+            }
+            else
+            {
+                AnswerState = "btn btn-success btn-sm";
+            }
+        }
+        else if (navigation == "Prev")
+        {
+            prev = CardIndex - 1;
+            if (prev <= 0)
+            { 
+                prev = 0;
+            }
+            if ((cardlist[prev].Answered == null) || (cardlist[prev].Answered == false))
+            {
+                AnswerState = "btn btn-secondary btn-sm";
+            }
+            else
+            {
+                AnswerState = "btn btn-success btn-sm";
+            }
+        }
+
+
+    }
+
+    private void GoToPrevCard()
+    {
+        ChangeAnswerState("Prev");
+        if (flip) FlipCard();
+
+        if (CardIndex > 0)
+        {
+            CardIndex = CardIndex - 1;
+            prevbtnstate = "enabled";
+            nextbtnstate = "enabled";
+        }
+        else
+        {
+            prevbtnstate = "disabled";
+        }
+    }
+
+    private void GoToNextCard()
+    {
+        ChangeAnswerState("Next");
+
+        if(flip) FlipCard();
+        if (CardIndex < CardCount - 1)
+        {
+            CardIndex = CardIndex + 1;
+            nextbtnstate = "enabled";
+            prevbtnstate = "enabled";
+        }
+
+        else
+        {
+            nextbtnstate = "disabled";
+        }
+    }
+
+    private async void GetFlashCards(ChangeEventArgs e)
+    {
+        string selectedvalue = e.Value.ToString();
+
+        if (selectedvalue.ToUpper() == "FALSE")
+        {
+            IncludeAnswered = false;
+        }
+        else if (selectedvalue.ToUpper() == "TRUE")
+        {
+            IncludeAnswered = true;
+        }
+        else
+        {
+            selectedCategory = e.Value.ToString();
+        }
+
+        if (selectedCategory != String.Empty)
+        {
+            // Reset the flashcard list
+            CardIndex = 0;
+            cardlist = null;
+            if (flip) FlipCard();
+
+            // Get new flashcard list
+            if (selectedCategory == "ALL")
+            {
+                try
+                {
+                    cardlist = await Task.Run(() => Cardsvc.GetAllCardsAsync(BundleID, UserId, IncludeAnswered));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error retrieving cards for Bundle Id {BundleID} , {BundleName} on choosing a category", BundleID, BundleName);
+                }
+            }
+            else
+            {
+                try
+                {
+                    cardlist = await Task.Run(() => Cardsvc.GetAllCardsAsync(BundleID, selectedCategory,UserId,IncludeAnswered));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error retrieving cards for Bundle Id {BundleID} , {BundleName}  on choosing a category", BundleID, BundleName);
+                }
+
+            }
+
+            //Radomize
+            if (cardlist is not null)
+            {
+                //Radomize
+                cardlist = cardlist.OrderBy(x => Random.Shared.Next()).ToList();
+                CardCount = cardlist.Count<CardModel>();
+            }
+
+            // Refresh component / UI
+            ChangeAnswerState("Intialize");
+            StateHasChanged();
+        }
+
+    }
+
+    private async void Answered()
+    {
+        UserAnswerModel answer = new UserAnswerModel();
+        answer.UserId = UserId;
+        answer.BundleId = BundleID;
+        answer.CardId = cardlist[CardIndex].CardId;
+        //answer.Answered = true;
+        if (cardlist[CardIndex].Answered is not null)
+        {
+            answer.Answered = (bool)!cardlist[CardIndex].Answered;
+        }
+        else
+        {
+            answer.Answered = true;
+        }
+
+
+        bool success = await Task.Run(() => Cardsvc.UpsertUserResponse(answer));
+        if (success) 
+        {
+            if (answer.Answered)
+            {
+                AnswerState = "btn btn-success btn-sm";
+                cardlist[CardIndex].Answered = true;
+            }
+            else
+            {
+                AnswerState = "btn btn-secondary btn-sm";
+                cardlist[CardIndex].Answered = false;
+            
+            }
+
+        }
+        //GoToNextCard();
+        StateHasChanged();
+    }
+
+    void HandleTouchStart(TouchEventArgs t)
+    {
+        startPoint.ReferencePoint = t.TargetTouches[0];
+        startPoint.StartTime = DateTime.Now;
+    }
+
+    void HandleTouchEnd(TouchEventArgs t)
+    {
+        const double swipeThreshold = 0.8;
+        try
+        {
+            if (startPoint.ReferencePoint == null)
+            {
+                return;
+            }
+
+            var endReferencePoint = t.ChangedTouches[0];
+
+            var diffX = startPoint.ReferencePoint.ClientX - endReferencePoint.ClientX;
+            var diffY = startPoint.ReferencePoint.ClientY - endReferencePoint.ClientY;
+            var diffTime = DateTime.Now - startPoint.StartTime;
+            var velocityX = Math.Abs(diffX / diffTime.Milliseconds);
+            var velocityY = Math.Abs(diffY / diffTime.Milliseconds);
+
+
+
+            if (velocityX < swipeThreshold && velocityY < swipeThreshold) return;
+            if (Math.Abs(velocityX - velocityY) < .5) return;
+
+            if (velocityX >= swipeThreshold)
+            {
+                swipedirection = diffX < 0 ? "right" : "left";
+            }
+            if (velocityY >= swipeThreshold)
+            {
+                swipedirection = diffY < 0 ? "down" : "up";
+            }
+
+            if (swipedirection == "left") { GoToNextCard(); }
+            else if (swipedirection == "right") { GoToPrevCard(); }
+        }
+
+        catch (Exception e)
+        {
+            
+        }
+    }
+    }

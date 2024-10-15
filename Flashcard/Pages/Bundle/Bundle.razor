@@ -1,0 +1,119 @@
+﻿@using Flashcard.Data.Subscription
+@using Flashcard.Data.Bundle
+@using Flashcard.Data.Cart
+@using Microsoft.AspNetCore.Identity
+@using Serilog
+
+@inject CartService cartsvc
+@inject NavigationManager NavManager
+@inject CartService cartsvc
+
+<div class="card h-100">
+    <div class="card-body border border-primary rounded">
+        <h5 class="card-title">@Name</h5>
+        
+        @if (DisplayPrice == true)
+        {
+            @if (@Price <= 0)
+            {
+                <div><img src="/images/free.jpg" width="50" height="50" alt=""></div>
+            }
+            else
+            {
+                <blockquote class="card-text">₹@Price</blockquote>
+            }
+        }
+
+
+        <div><img src=@Image width="100" height="120" alt=""></div>
+        <p class="card-text">@Description</p>
+        @if (BundleState == StateOfBundle.Subscribed.ToString())
+        {
+            <button class="btn btn-primary" @onclick="GoToCards" type="button">Go to Cards</button>
+            
+        }
+        else if (BundleState == StateOfBundle.AddedToCart.ToString())
+        {
+            <button class="btn btn-danger" @onclick="RemoveFromCart" type="button">Remove From Cart</button>
+            
+        }
+        else
+        {
+        <button class="btn btn-primary" @onclick="AddToCart" type="button">Add To Cart</button>
+        }
+
+    </div>
+</div>
+
+
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string Name { get; set; }
+    [Parameter] public string Description { get; set; }
+    [Parameter] public decimal Price { get; set; }
+    [Parameter] public string Category { get; set; }
+    [Parameter] public string? Image { get; set; }   
+
+    [Parameter] public string UserId { get; set; }
+    [Parameter] public bool DisplayPrice { get; set; } = true;
+
+    [Parameter] public string? BundleState { get; set; } 
+
+    [Parameter] public EventCallback OnCartEvent { get; set; }
+
+    private CartModel _cartitem = new CartModel();
+
+    private void GoToCards()
+    {
+        try
+        {
+            NavManager.NavigateTo($"/flashcards/{UserId}/{Id}/{Name}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Navigation error for /flashcards/{UserId}/{Id}/{Name}",UserId, Id, Name);
+        }
+
+    }
+
+    private async void AddToCart()
+    {
+        try
+        {
+            CartModel cartitem = new CartModel();
+            cartitem.BundleId = Id;
+            cartitem.Userid = UserId;
+            cartitem.CreatedDate = DateTime.Now;
+
+            bool success = await cartsvc.AddBundleToCart(cartitem);
+            await OnCartEvent.InvokeAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex,"Not able to add bundle {BundleId} for user {UserId}", Id, UserId);
+
+        }
+    }
+
+    private async void RemoveFromCart()
+    {
+        try
+        {
+            CartModel cartitem = new CartModel();
+            cartitem.BundleId = Id;
+            cartitem.Userid = UserId;
+
+            bool success = await cartsvc.RemoveBundleFromCart(cartitem);
+            await OnCartEvent.InvokeAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex,"Not able to remove {BundleId} for user {UserId}", Id, UserId);
+        }
+    }
+
+
+}

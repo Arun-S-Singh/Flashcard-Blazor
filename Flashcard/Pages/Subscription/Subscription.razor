@@ -1,0 +1,98 @@
+﻿@page "/subscriptions"
+
+<PageTitle>Subscriptions</PageTitle>
+
+@using Flashcard.Data.Subscription
+@using Flashcard.Data.Bundle
+@using Serilog
+
+@using Flashcard.Pages.Bundle
+
+@inject NavigationManager navigate
+@inject AuthenticationStateProvider ASP
+@inject SubscriptionService subsservice
+
+
+<AuthorizeView>
+    <Authorized>
+        @if (_subslist == null)
+        {
+            <div class="p-3 mb-2 bg-primary text-white"><h5>Loading subscriptions ...</h5></div>
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Loading subscriptions ...</span>
+                </div>
+        }
+        else
+        {         
+            <div class="container-fluid">
+                <div class="row">
+                    @if (_subslist.Count == 0)
+                    {
+                        <div class="p-3 mb-2 bg-primary text-white"><h5>Not subscribed to any Bundle as yet !!. Go the "All Bundles" from Menu to subscribe</h5></div>
+                        
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="bundlelist">
+                                <span class="oi oi-list-rich" aria-hidden="true"></span> Explore Bundles
+                            </NavLink>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var mysubs in _subslist)
+                        {
+                            <div class="col-lg">
+                            <Bundle Id=@mysubs.Id 
+                                    Name=@mysubs.Name 
+                                    Description=@mysubs.Description
+                                    Price=@mysubs.Price 
+                                    Category=@mysubs.Category 
+                                    Image=@mysubs.Image
+                                    UserId=@_userId
+                                    DisplayPrice="false"
+                                    BundleState=@StateOfBundle.Subscribed.ToString()>
+                            </Bundle>
+                            </div>
+                        }
+                    }
+
+                </div>
+            </div>
+        }
+
+    </Authorized>
+    <NotAuthorized>
+        <a href="Identity/Account/Register">Register</a>
+        <a href="Identity/Account/Login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    private List<BundleModel> _subslist;
+    private String _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await ASP.GetAuthenticationStateAsync()).User;
+        var UserId = user.FindFirst(c => c.Type.Contains("nameidentifier"))?.Value;
+
+        if (UserId is not null)
+        {
+            _userId = UserId;
+
+            try
+            {
+                _subslist = await Task.Run(() => subsservice.GetAllSubscriptionsAsync(_userId));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error retrieving subscription for the user {user}", _userId);
+            }
+            
+        }
+        else
+        {
+            Log.Information("Not able to retireve User");
+        }
+    }    
+}

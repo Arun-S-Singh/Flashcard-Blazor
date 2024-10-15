@@ -1,0 +1,68 @@
+﻿@page
+@model Flashcard.Pages.CRUD.Flashcard.DetailsModel
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>CardModel</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.BundleId)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.BundleId)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.CardId)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.CardId)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.Question)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.Question)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.Answer)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.Answer)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.Image)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.Image)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.BackImage)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.BackImage)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.Category)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.Category)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CardModel.Explanation)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CardModel.Explanation)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-page="./Edit" asp-route-id="@Model.CardModel?.Id">Edit</a> |
+    <a asp-page="./Index">Back to List</a>
+</div>

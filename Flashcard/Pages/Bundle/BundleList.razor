@@ -1,0 +1,125 @@
+﻿@page "/bundlelist"
+
+<PageTitle>List of bundles</PageTitle>
+
+@using Flashcard.Data.Bundle
+@using Flashcard.Data.Cart
+@using Serilog
+
+@inject NavigationManager navigate
+@inject AuthenticationStateProvider ASP
+@inject BundleService bundlesvc
+@inject CartService cartsvc
+
+<AuthorizeView>
+    <Authorized>
+        @if (bundlelist == null)
+        {
+            <div class="p-3 mb-2 bg-primary text-white">Loading bundles ...</div>
+                <div class="spinner-border text-info" role="status">
+                <span class="visually-hidden"><h5>Loading bundles ...</h5></span>
+                </div>
+        }
+        else
+        {
+            <div class=container-fluid>
+                <div class="row">
+                    @if (bundlelist.Count == 0)
+                    {
+                        <div class="p-3 mb-2 bg-primary text-white"><h5>You are subscribed to all the bundles !!</h5></div>
+
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="subscriptions">
+                                <span class="oi oi-list-rich" aria-hidden="true"></span> Go to Subscriptions
+                            </NavLink>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="nav-item px-5">
+                            <NavLink class="nav-link" href="cart">
+                                <span class="oi oi-cart" aria-hidden="true"></span> Checkout and Add to subscriptions
+                            </NavLink>
+                        </div>
+                        
+                        @foreach (var mybundle in bundlelist)
+                        {
+                            <div class="col-lg">
+                                <Bundle Id=@mybundle.Id 
+                                    Name=@mybundle.Name 
+                                    Description=@mybundle.Description
+                                    Price=@mybundle.Price 
+                                    Category=@mybundle.Category 
+                                    Image=@mybundle.Image
+                                    
+                                    UserId=@_userId
+                                    DisplayPrice="true"
+                                    BundleState=@mybundle.BundleState
+                                    OnCartEvent="RefreshBundleList">
+                                </Bundle>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <a href="Identity/Account/Register">Register</a>
+        <a href="Identity/Account/Login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    private List<BundleModel>? bundlelist;
+    private List<BundleModel>? cartlist;
+    private String? _userId;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await ASP.GetAuthenticationStateAsync()).User;
+        var UserId = user.FindFirst(c => c.Type.Contains("nameidentifier"))?.Value;
+
+        if (UserId is not null)
+        {
+            _userId = UserId;
+
+            try
+            {
+                bundlelist = await Task.Run(() => bundlesvc.GetAllBundlesAsync(_userId));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error retrieving Bundles for the user {_userId}", user.ToString());
+            }
+
+            try
+            {
+                cartlist = await Task.Run(() => cartsvc.GetSelectedItemsAsync(_userId));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error retrieving Bundles for the user {_userId}", user.ToString());
+            }
+        }
+        else
+        {
+            Log.Information("Not able to retireve User");
+        }
+
+        if (cartlist is not null)
+        {
+            foreach (var cartitem in cartlist)
+                foreach (var bndle in bundlelist)
+                {
+                    if (cartitem.Id == bndle.Id) { bndle.BundleState = StateOfBundle.AddedToCart.ToString(); }
+                }
+        }
+        
+    }
+
+    private void RefreshBundleList()
+    {
+        navigate.NavigateTo("/bundlelist", forceLoad: true);
+    }
+}

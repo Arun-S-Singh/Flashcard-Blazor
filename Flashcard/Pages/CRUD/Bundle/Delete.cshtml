@@ -1,0 +1,71 @@
+﻿@page
+@model Flashcard.Pages.CRUD.Bundle.DeleteModel
+
+@{
+    ViewData["Title"] = "Delete";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<h1>Delete</h1>
+
+<h3>Are you sure you want to delete this?</h3>
+<div>
+    <h4>BundleModel</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Description)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Description)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Price)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Price)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Category)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Category)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Image)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Image)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.BundleState)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.BundleState)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.SubscriptionPeriod)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.SubscriptionPeriod)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.IsPrivate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.IsPrivate)
+        </dd>
+    </dl>
+    
+    <form method="post">
+        <input type="hidden" asp-for="BundleModel.Id" />
+        <input type="submit" value="Delete" class="btn btn-danger" /> |
+        <a asp-page="./Index">Back to List</a>
+    </form>
+</div>

@@ -1,0 +1,17 @@
+﻿@page "/admin"
+
+<h3>Administrator Page</h3>
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <a href="/crud/bundle/list">Manage Bundles</a><p/>
+        <a href="/crud/card/list">Manage Cards</a>
+    </Authorized>
+    <NotAuthorized>
+        <a href="Identity/Account/Register">Register</a>
+        <a href="Identity/Account/Login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+}

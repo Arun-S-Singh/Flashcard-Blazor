@@ -1,0 +1,71 @@
+﻿@page
+@model Flashcard.Pages.CRUD.Bundle.DetailsModel
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>BundleModel</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Description)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Description)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Price)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Price)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Category)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Category)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.Image)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Image)
+        </dd>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.Image)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.BundleState)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.BundleState)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.SubscriptionPeriod)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.SubscriptionPeriod)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.BundleModel.IsPrivate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BundleModel.IsPrivate)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-page="./Edit" asp-route-id="@Model.BundleModel?.Id">Edit</a> |
+    <a asp-page="./Index">Back to List</a>
+</div>
